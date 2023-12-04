@@ -2,26 +2,28 @@
 #include <Wire.h>
 #include <RtcDS3231.h>
 #include "prescaler.h"
-RtcDS3231<TwoWire> Rtc(Wire);
 
 #define INTERRUPT_PIN 3
 #define IRRIGATION_INTERVAL 15000 //15 s
 #define HOUR_ALARM_ONE 7
 #define HOUR_ALARM_TWO 19
 
+RtcDS3231<TwoWire> Rtc(Wire);
 volatile bool irrigationMode = false;
  
 void setup()
 {
-  pinMode(INTERRUPT_PIN, INPUT_PULLUP);
+  //pinMode(INTERRUPT_PIN, INPUT_PULLUP);
+  DDRD = DDRD &~(1 << DDD3);
+  PORTD = PORTD | (1 << PD3);
 
   Rtc.Begin();
   Rtc.Enable32kHzPin(false);
   Rtc.SetSquareWavePin(DS3231SquareWavePin_ModeAlarmBoth); //enables alarms One and Two
   setWakeUpAlarms();
 
-  DDRB |= 0x01; // same as pinMode(8, OUTPUT);
-  PORTB |= 0x00; //same as digitalWrite(8, LOW);
+  DDRD = DDRD | (1 << DDD4); // same as pinMode(4, OUTPUT);
+  PORTD = PORTD &~(1<< PD4); //same as digitalWrite(4, LOW);
 
   setClockPrescaler(CLOCK_PRESCALER_256);
 

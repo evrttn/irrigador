@@ -11,8 +11,10 @@
 #define MAX_BUFF_SIZE  38
 
 RtcDS3231<TwoWire> Rtc(Wire);
+
 volatile bool irrigationMode = false;
 volatile bool bleMode = false;
+volatile bool myloop = true;
 
 uint16_t irrigInterval = 2000; //7.5s
 
@@ -21,20 +23,20 @@ volatile char UARTBUFF[MAX_BUFF_SIZE]={' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',
                    ' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',
                    ' ',' ',' ',' ',' ',' ',' ',' '};
 
-volatile unsigned int addr = 0;
-volatile boolean msgCompleted = false;
+volatile uint8_t addr = 0;
 
-ISR(USART0_RX_vect){
-
-  UARTBUFF[addr] = UDR0; 
-
+ISR(USART_RX_vect){
+  char c = UDR0;
+  
   if(addr >= MAX_BUFF_SIZE)
     addr = 0;
-  else
-    addr++;
 
-  if(UARTBUFF[addr] == '!')
-    msgCompleted = true;
+  if(c == '!'){
+      myloop = false;
+      UARTBUFF[addr] = '\0';
+      addr = 0;
+  }else
+    UARTBUFF[addr++] = c;
 }
 
 
@@ -52,20 +54,40 @@ void tratarHorario(char * comm){
   Rtc.SetDateTime(dateTime);
 }
 
-void tratarAlarme(char * comm){
+void tratarAlarmeOne(char * comm){
   char *hora, *minuto;
-  strcpy(hora, strtok(comm, ":"));
-  strcpy(minuto, strtok(NULL, ":"));
-
+  
+  hora = strtok(comm, ":");
+  minuto = strtok(NULL, ":");
+  
   uint8_t h = atoi(hora);
   uint8_t m = atoi(minuto);
+
+  DS3231AlarmOne alarm1(0, h, m, 0, DS3231AlarmOneControl_HoursMinutesSecondsMatch);
+  Rtc.SetAlarmOne(alarm1);
+  Rtc.LatchAlarmsTriggeredFlags();// trigger alarms
+}
+
+void tratarAlarmeTwo(char * comm){
+  char *hora, *minuto;
+  
+  hora = strtok(comm, ":");
+  minuto = strtok(NULL, ":");
+  
+  uint8_t h = atoi(hora);
+  uint8_t m = atoi(minuto);
+
+  DS3231AlarmTwo alarm2(0, h, m, DS3231AlarmTwoControl_HoursMinutesMatch);
+  Rtc.SetAlarmTwo(alarm2);
+    
+  Rtc.LatchAlarmsTriggeredFlags();
 }
 
 void tratarData(char * comm){
   char *dia, *mes, *ano;
-  strcpy(dia, strtok(comm, ":"));
-  strcpy(mes, strtok(NULL, ":"));
-  strcpy(ano, strtok(NULL, ":"));
+  dia = strtok(comm, "/");
+  mes = strtok(NULL, "/");
+  ano = strtok(NULL, "/");
 
   uint8_t d = atoi(dia);
   uint8_t m = atoi(mes);
@@ -75,12 +97,30 @@ void tratarData(char * comm){
   dateTime.SetDay(d);
   dateTime.SetMonth(m);
   dateTime.SetYear(a);
-  Rtc.SetDateTime(dateTime);  
+  Rtc.SetDateTime(dateTime);
 }
 
 void tratarTempo(char * comm){
   uint16_t t = atoi(comm);
   irrigInterval = t;  
+}
+
+#define countof(a) (sizeof(a) / sizeof(a[0]))
+
+void printDateTime(const RtcDateTime& dt)
+{
+    char datestring[20];
+
+    snprintf_P(datestring, 
+            countof(datestring),
+            PSTR("%02u/%02u/%04u %02u:%02u:%02u"),
+            dt.Day(),
+            dt.Month(),
+            dt.Year(),
+            dt.Hour(),
+            dt.Minute(),
+            dt.Second() );
+    UART0_enviaString(datestring);
 }
 
 void menu(char* comm){
@@ -90,10 +130,10 @@ void menu(char* comm){
       tratarHorario(comm+1);
       break;
     case 'A':
-      tratarAlarme(comm+1);
+      tratarAlarmeOne(comm+1);
       break;
     case 'B':
-      tratarAlarme(comm+1);
+      tratarAlarmeTwo(comm+1);
       break;
     case 'D':
       tratarData(comm+1);
@@ -101,16 +141,22 @@ void menu(char* comm){
     case 'T':
       tratarTempo(comm+1);
       break;
+    case 'P':
+      RtcDateTime now = Rtc.GetDateTime();
+      printDateTime(now);
+      break;
     default:
       break;
   }
 }
 
 void handleBLEMessage() {
-  PORTB |= (1 << PB4);
-  /*
-  while(!msgCompleted);
+  if(myloop)
+    return;
+
+  bleMode = false;
   
+  UART0_enviaString("handling ble");
   char *p[5];
   int i = 0;
   
@@ -134,15 +180,15 @@ void handleBLEMessage() {
       comm = p[j];
       menu(comm);
       j++;
-    }
-    
+    }     
   PORTB &= ~(1 << PB4);
-  */ 
+  UART0_enviaString("fim handling ble");
+   
 }
  
 void setup()
 {
-  //UART0_config(); //BLE communication 
+  UART0_config(); //BLE communication 
   
   //pinMode(INTERRUPT_PIN, INPUT_PULLUP);
   DDRD &= ~((1 << DDD3) | (1 << PD2));
@@ -160,7 +206,7 @@ void setup()
 
   setClockPrescaler(CLOCK_PRESCALER_256);
 
-  //sei();?
+  //sei();
 
   while(true){ //avoid entering loop() because it always checks serial comm.
     goToSleep();    
@@ -179,23 +225,25 @@ void setWakeUpAlarms(){
 }
 
 void work()
-{ 
-  
+{   
+  //sei(); do not work
   if(irrigationMode)
     pumpWater();
   
-  if(bleMode)
+  while(bleMode)
     handleBLEMessage();
     
   Rtc.LatchAlarmsTriggeredFlags();// allows for alarms to trigger again
   irrigationMode = false; //reset the flag
-  bleMode = false;
+  myloop = true;
 }
 
 
 void wakeUpBLE()
 {
   bleMode = true;
+  PORTB |= (1 << PB4);
+  //UART0_enviaString("hello, Everton"); not connected yet  
 }
 
 void wakeUp()
@@ -205,14 +253,18 @@ void wakeUp()
 
 void goToSleep()
 {
+  cli();
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);  
   sleep_enable();    
   attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), wakeUp, FALLING); //
   attachInterrupt(digitalPinToInterrupt(BLUETOOTH_PIN), wakeUpBLE, FALLING); //  
+  sei();
   sleep_cpu();
   sleep_disable();
-  detachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN));
-  detachInterrupt(digitalPinToInterrupt(BLUETOOTH_PIN));
+  sei();
+  //detachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN));
+  //detachInterrupt(digitalPinToInterrupt(BLUETOOTH_PIN));
+  //sei(); do not work
 }
 
 void pumpWater()

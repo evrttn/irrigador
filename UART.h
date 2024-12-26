@@ -27,7 +27,7 @@ void UART0_enviaCaractere(unsigned char ch)
 void UART0_enviaString(char *s)
 {
 	unsigned int i=0;
-	while (s[i] != '\x0')
+	while (s[i] != '\0')
 	{
 		UART0_enviaCaractere(s[i++]);
 	};

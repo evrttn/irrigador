@@ -191,7 +191,7 @@ void setup()
   UART0_config(); //BLE communication 
   
   //pinMode(INTERRUPT_PIN, INPUT_PULLUP);
-  DDRD &= ~((1 << DDD3) | (1 << PD2));
+  DDRD &= ~((1 << DDD3) | (1 << DDD2));
   PORTD |= ((1 << PD3) | (1 << PD2));
 
   Rtc.Begin();

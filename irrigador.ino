@@ -17,6 +17,7 @@ volatile uint8_t addr = 0;
 volatile bool msgComplete = false;
 volatile bool bleMode = false;
 volatile bool irrigMode = false;
+volatile int counter = 0;
 
 RtcDS3231<TwoWire> Rtc(Wire);
 
@@ -44,23 +45,27 @@ void wakeUp()
 void wakeUpBLE()
 {
   bleMode = !bleMode;
-  if(bleMode)
+  if(bleMode){
+    counter = 0;
     PORTB |= (1 << PB4);
-  else
+    TIMSK1 |= (1 << OCIE1A);  // habilita interrupcao por igualdade de comparacao    
+  }else{
     PORTB &= ~(1 << PB4);
+    TIMSK1 &= ~(1 << OCIE1A);  // desabilita interrupcao por igualdade de comparacao
+  }
 }
 
 void setup() {
   // put your setup code here, to run once:
   UART0_config();
   //sei(); desnecessario
-  DDRD &= ~((1 << DDD3) | (1 << PD2));
+  DDRD &= ~((1 << DDD3) | (1 << DDD2));
   DDRD |= (1 << DDD4);
   
   PORTD |= ((1 << PD3) | (1 << PD2));
-  PORTD &= ~(1 << PD4);
+  PORTD &= ~(1 << PD4);      
   PORTB &= ~(1 << PB4);
-
+  
   Rtc.Begin();
   Rtc.Enable32kHzPin(false);
   Rtc.SetSquareWavePin(DS3231SquareWavePin_ModeAlarmBoth); //enables alarms One and Two
@@ -71,6 +76,14 @@ void setup() {
   setWakeUpAlarms();  
   
   attachInterrupt(digitalPinToInterrupt(BLUETOOTH_PIN), wakeUpBLE, FALLING); //  
+
+  // Configuração do TIMER1
+  TCCR1A = 0;                //confira timer para operacao normal
+  TCCR1B = 0;                //limpa registrador
+  TCNT1  = 0;                //zera temporizador
+ 
+  OCR1A = 0x7A12;            // carrega registrador de comparacao: 8MHz/256/1Hz = 31250 = 0x7A12
+  TCCR1B |= (1 << WGM12) | (1 << CS12);   // modo CTC, prescaler de 256: CS12 = 1  
 }
 
 void setWakeUpAlarms()
@@ -109,9 +122,9 @@ void goToSleep()
 }
 
 void loop() {
-   if(bleMode)
+   if(bleMode){    
     handleBLEMessage();
-   else{  
+   }else{  
     goToSleep();   
     pumpWater();
    }
@@ -120,7 +133,7 @@ void loop() {
 void handleBLEMessage() {
   
   if(!msgComplete)
-    return;
+    return;    
 
   char *p[5];
   int i = 0;
@@ -147,6 +160,7 @@ void handleBLEMessage() {
       j++;
     }
     msgComplete = false;
+    counter = 0;
 }
 
 void menu(char* comm){
@@ -313,5 +327,15 @@ void UART0_enviaString(char *s)
   while (s[i] != '\0')
   {
     UART0_enviaCaractere(s[i++]);
+  }
+}
+
+ISR(TIMER1_COMPA_vect)          // interrupcao por igualdade de comparacao no TIMER1
+{
+  counter++;
+  if(counter > 59){
+    bleMode = false;
+    TIMSK1 &= ~(1 << OCIE1A);  // desabilita interrupcao por igualdade de comparacao
+    PORTB &= ~(1 << PB4); //desliga bluetooth
   }
 }

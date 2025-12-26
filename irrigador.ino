@@ -48,9 +48,11 @@ void wakeUpBLE()
   if(bleMode){
     counter = 0;
     PORTB |= (1 << PB4);
+    PORTC |= (1 << PC1);
     TIMSK1 |= (1 << OCIE1A);  // habilita interrupcao por igualdade de comparacao    
   }else{
     PORTB &= ~(1 << PB4);
+    PORTC &= ~(1 << PC1);
     TIMSK1 &= ~(1 << OCIE1A);  // desabilita interrupcao por igualdade de comparacao
   }
 }
@@ -59,12 +61,15 @@ void setup() {
   // put your setup code here, to run once:
   UART0_config();
   //sei(); desnecessario
+  DDRB |= (1 << DDB0); 
   DDRD &= ~((1 << DDD3) | (1 << DDD2));
-  DDRD |= (1 << DDD4);
+  DDRD |= ((1 << DDD4) | (1 << DDD5) | (1 << DDD6) | (1 << DDD7));
+  DDRC |= (1 << DDC1);
   
   PORTD |= ((1 << PD3) | (1 << PD2));
-  PORTD &= ~(1 << PD4);      
-  PORTB &= ~(1 << PB4);
+  PORTD &= ~((1 << PD4) | (1 << PD5) | (1 << PD6) | (1 << PD7));      
+  PORTB &= ~((1 << PB4) | (1 << PB0));
+  PORTC &= ~(1 << PC1);
   
   Rtc.Begin();
   Rtc.Enable32kHzPin(false);
@@ -294,9 +299,32 @@ void tratarTempo(char * comm){
 void pumpWater()
 {
   if(irrigMode){
+    /* codigo para abrir a valvula ligada ao modulo mosfet
     PORTD |= (1 << PD4);  
     delay(irrigInterval);
     PORTD &= ~(1 << PD4);
+    */
+
+    PORTD |= (1 << PD5);  
+    unsigned long fim = millis() + irrigInterval;
+    while (millis() < fim);
+    PORTD &= ~(1 << PD5);
+
+
+  
+    /*
+    PORTD |= (1 << PD6);  
+    delay(irrigInterval);
+    PORTD &= ~(1 << PD6);
+
+    PORTD |= (1 << PD7);  
+    delay(irrigInterval);
+    PORTD &= ~(1 << PD7);
+
+    PORTB |= (1 << PB0);  
+    delay(irrigInterval);
+    PORTB &= ~(1 << PB0);
+    */
     irrigMode = false;
   } 
 }
@@ -337,5 +365,6 @@ ISR(TIMER1_COMPA_vect)          // interrupcao por igualdade de comparacao no TI
     bleMode = false;
     TIMSK1 &= ~(1 << OCIE1A);  // desabilita interrupcao por igualdade de comparacao
     PORTB &= ~(1 << PB4); //desliga bluetooth
+    PORTC &= ~(1 << PC1);
   }
 }

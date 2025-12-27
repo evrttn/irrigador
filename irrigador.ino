@@ -305,9 +305,10 @@ void pumpWater()
     PORTD &= ~(1 << PD4);
     */
 
+    unsigned long irrigTime = irrigInterval/2;//divide por 2 pq esta soltando agua pelo dobro do tempo solicitado
     PORTD |= (1 << PD5);  
-    unsigned long fim = millis() + irrigInterval;
-    while (millis() < fim);
+    unsigned long fim = millis() + irrigTime;
+    while (millis() < fim); //millis() usa timer0
     PORTD &= ~(1 << PD5);
 
 

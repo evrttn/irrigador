@@ -21,8 +21,6 @@ volatile int counter = 0;
 
 RtcDS3231<TwoWire> Rtc(Wire);
 
-uint16_t irrigInterval;
-
 ISR(USART_RX_vect){
   char c = UDR0;
   
@@ -74,10 +72,7 @@ void setup() {
   Rtc.Begin();
   Rtc.Enable32kHzPin(false);
   Rtc.SetSquareWavePin(DS3231SquareWavePin_ModeAlarmBoth); //enables alarms One and Two
-  
-  uint8_t t = EEPROM.read(0);
-  irrigInterval = t * 1000;
-  
+    
   setWakeUpAlarms();  
   
   attachInterrupt(digitalPinToInterrupt(BLUETOOTH_PIN), wakeUpBLE, FALLING); //  
@@ -291,8 +286,6 @@ void tratarData(char * comm){
 
 void tratarTempo(char * comm){
   uint8_t t = atoi(comm);
-  irrigInterval = t*1000;
-
   EEPROM.write(0, t);
 }
 
@@ -305,7 +298,9 @@ void pumpWater()
     PORTD &= ~(1 << PD4);
     */
 
-    unsigned long irrigTime = irrigInterval/2;//divide por 2 pq esta soltando agua pelo dobro do tempo solicitado
+    uint8_t t = EEPROM.read(0);
+
+    unsigned long irrigTime = t * 1000;
     PORTD |= (1 << PD4);  
     unsigned long fim = millis() + irrigTime;
     while (millis() < fim); //millis() usa timer0

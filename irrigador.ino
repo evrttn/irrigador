@@ -127,18 +127,8 @@ void loop() {
    }else{  
     goToSleep();   
     pumpWater();
-
-    //TODO DEIXAR TUDO DENTRO DE UMA UNICA FUNCAO
-    long batVcc = lerVcc();
-    if(batVcc < 3400){
-      if(batVcc > 3300)
-        //TOCA BUZZER 1 VEZ
-      else if(batVcc > 3200)
-        //TOCA BUZZER 2 VEZES
-      else
-        //TOCA BUZZER 3 VEZES
-
-    }
+    verifyBattVoltage();
+   }    
 }
 
 void handleBLEMessage() {
@@ -397,4 +387,31 @@ long lerVcc() {
   const long vccMv = 1138000L;//1125300L;
   resultado = vccMv / resultado; 
   return resultado; // Retorna o valor em mV (ex: 5000 para 5.0V)
+}
+
+void tocarUmBip(){
+  PORTD |= (1 << PD7);  
+  unsigned long fim = millis() + 250;
+  while (millis() < fim); //millis() usa timer0
+  PORTD &= ~(1 << PD7);
+
+  fim = millis() + 250;
+  while (millis() < fim);
+}
+
+void verifyBattVoltage(){
+    long batVcc = lerVcc();
+    if(batVcc < 3400){
+      if(batVcc > 3300){
+        tocarUmBip();
+      }else if(batVcc > 3200){
+        tocarUmBip();
+        tocarUmBip();
+      }
+      else{// vcc < 3.2v
+        tocarUmBip();
+        tocarUmBip();
+        tocarUmBip();
+      }
+    }
 }

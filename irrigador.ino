@@ -43,8 +43,9 @@ void wakeUp()
 void wakeUpBLE()
 {
   bleMode = !bleMode;
+
   if(bleMode){
-    counter = 0;
+    counter = 0;    
     PORTB |= (1 << PB4);
     PORTC |= (1 << PC1);
     TIMSK1 |= (1 << OCIE1A);  // habilita interrupcao por igualdade de comparacao    
@@ -303,16 +304,15 @@ void pumpWater()
     uint8_t t0 = EEPROM.read(0);
     uint8_t t1 = EEPROM.read(1);
 
-    if(t1 != t0){
-      tocarUmBip();
-      tocarUmBip();
-      tocarUmBip();
-      tocarUmBip();
+    if(t1 != t0){ //se houver alteracao no tempo por excesso de temperatura externa, previne irrigacao longa
+      for(int i = 0; i < 4; i++)
+        tocarUmBip();
     }else{
-      unsigned long irrigTime = t0 * 1000;
-      unsigned long fim = millis() + irrigTime;
+      const unsigned long interval = t0 * 1000;
+      const unsigned long inicio = millis();   
+      
       PORTD |= (1 << PD4);      
-      while (millis() < fim); //millis() usa timer0
+      while (millis() - inicio <= interval); //millis() usa timer0
       PORTD &= ~(1 << PD4);
     }
 
@@ -370,11 +370,11 @@ void UART0_enviaString(char *s)
 ISR(TIMER1_COMPA_vect)          // interrupcao por igualdade de comparacao no TIMER1
 {
   counter++;
-  if(counter > 59){
-    bleMode = false;
+  if(counter > 59){    
     TIMSK1 &= ~(1 << OCIE1A);  // desabilita interrupcao por igualdade de comparacao
     PORTB &= ~(1 << PB4); //desliga bluetooth
     PORTC &= ~(1 << PC1);
+    bleMode = false;
   }
 }
 
@@ -398,14 +398,16 @@ long lerVcc() {
   return resultado; // Retorna o valor em mV (ex: 5000 para 5.0V)
 }
 
-void tocarUmBip(){
+void tocarUmBip(){//TODO CORRIGIR
+  unsigned long interval = 250;   
+  unsigned long inicio = millis();
+
   PORTD |= (1 << PD7);  
-  unsigned long fim = millis() + 250;
-  while (millis() < fim); //millis() usa timer0
+  while (millis() - inicio <= interval); //millis() usa timer0
   PORTD &= ~(1 << PD7);
 
-  fim = millis() + 250;
-  while (millis() < fim);
+  inicio = millis();
+  while (millis() - inicio <= interval);
 }
 
 void verifyBattVoltage(){

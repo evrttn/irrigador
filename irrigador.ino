@@ -309,9 +309,9 @@ void pumpWater()
       tocarUmBip();
       tocarUmBip();
     }else{
-      unsigned long irrigTime = t * 1000;
-      PORTD |= (1 << PD4);  
+      unsigned long irrigTime = t0 * 1000;
       unsigned long fim = millis() + irrigTime;
+      PORTD |= (1 << PD4);      
       while (millis() < fim); //millis() usa timer0
       PORTD &= ~(1 << PD4);
     }

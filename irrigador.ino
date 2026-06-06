@@ -123,13 +123,17 @@ void goToSleep()
 }
 
 void loop() {
-   if(bleMode){    
+  goToSleep();
+
+  while(bleMode){    
     handleBLEMessage();
-   }else{  
-    goToSleep();   
+  } 
+
+  while(irrigMode){    
     pumpWater();
-    verifyBattVoltage();
-   }    
+  }
+  
+  verifyBattVoltage();    
 }
 
 void handleBLEMessage() {
@@ -289,47 +293,22 @@ void tratarData(char * comm){
 void tratarTempo(char * comm){
   uint8_t t = atoi(comm);
   EEPROM.write(0, t);
-  EEPROM.write(1, t);
 }
 
 void pumpWater()
 {
-  if(irrigMode){
-    uint8_t t0 = EEPROM.read(0);
-    uint8_t t1 = EEPROM.read(1);
-
-    if(t1 != t0){ //se houver alteracao no tempo por excesso de temperatura externa, previne irrigacao longa
-      for(int i = 0; i < 4; i++)
-        tocarUmBip();
-    }else{
-      const unsigned long interval = t0 * 1000;
-      const unsigned long inicio = millis();   
-      
-      PORTD |= (1 << PD4);      
-      while (millis() - inicio <= interval); //millis() usa timer0
-      PORTD &= ~(1 << PD4);
-    }
-
-    //fim = millis() + irrigTime;
-    //PORTD |= (1 << PD7);  
-    //while (millis() < fim);
-    //PORTD &= ~(1 << PD7);
   
-    /*
-    PORTD |= (1 << PD6);  
-    delay(irrigInterval);
-    PORTD &= ~(1 << PD6);
+  uint8_t t = EEPROM.read(0);
 
-    PORTD |= (1 << PD7);  
-    delay(irrigInterval);
-    PORTD &= ~(1 << PD7);
+  const unsigned long interval = t * 1000;
+  const unsigned long inicio = millis();   
+      
+  PORTD |= (1 << PD4);      
+  while (millis() - inicio <= interval); //millis() usa timer0
+  PORTD &= ~(1 << PD4);
 
-    PORTB |= (1 << PB0);  
-    delay(irrigInterval);
-    PORTB &= ~(1 << PB0);
-    */
-    irrigMode = false;
-  } 
+  irrigMode = false;
+   
 }
 
 void UART0_config()

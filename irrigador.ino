@@ -295,12 +295,6 @@ void tratarTempo(char * comm){
 void pumpWater()
 {
   if(irrigMode){
-    /* codigo para abrir a valvula ligada ao modulo mosfet
-    PORTD |= (1 << PD4);  
-    delay(irrigInterval);
-    PORTD &= ~(1 << PD4);
-    */
-
     uint8_t t0 = EEPROM.read(0);
     uint8_t t1 = EEPROM.read(1);
 
@@ -398,8 +392,8 @@ long lerVcc() {
   return resultado; // Retorna o valor em mV (ex: 5000 para 5.0V)
 }
 
-void tocarUmBip(){//TODO CORRIGIR
-  unsigned long interval = 250;   
+void tocarUmBip(){
+  const unsigned long interval = 250;   
   unsigned long inicio = millis();
 
   PORTD |= (1 << PD7);  

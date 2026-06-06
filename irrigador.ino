@@ -288,6 +288,7 @@ void tratarData(char * comm){
 void tratarTempo(char * comm){
   uint8_t t = atoi(comm);
   EEPROM.write(0, t);
+  EEPROM.write(1, t);
 }
 
 void pumpWater()
@@ -299,13 +300,21 @@ void pumpWater()
     PORTD &= ~(1 << PD4);
     */
 
-    uint8_t t = EEPROM.read(0);
+    uint8_t t0 = EEPROM.read(0);
+    uint8_t t1 = EEPROM.read(1);
 
-    unsigned long irrigTime = t * 1000;
-    PORTD |= (1 << PD4);  
-    unsigned long fim = millis() + irrigTime;
-    while (millis() < fim); //millis() usa timer0
-    PORTD &= ~(1 << PD4);
+    if(t1 != t0){
+      tocarUmBip();
+      tocarUmBip();
+      tocarUmBip();
+      tocarUmBip();
+    }else{
+      unsigned long irrigTime = t * 1000;
+      PORTD |= (1 << PD4);  
+      unsigned long fim = millis() + irrigTime;
+      while (millis() < fim); //millis() usa timer0
+      PORTD &= ~(1 << PD4);
+    }
 
     //fim = millis() + irrigTime;
     //PORTD |= (1 << PD7);  

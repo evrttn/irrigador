@@ -201,12 +201,13 @@ void printDateTime()
     RtcDateTime dt = Rtc.GetDateTime();
     DS3231AlarmOne aOne = Rtc.GetAlarmOne();
     DS3231AlarmTwo aTwo = Rtc.GetAlarmTwo();
-    
-    char datestring[43];
+    long batVcc = lerVcc();
+
+    char datestring[51];
 
     snprintf_P(datestring, 
             countof(datestring),
-            PSTR("%02u/%02u/%04u %02u:%02u:%02u A %02u:%02u B %02u:%02u T %d"),
+            PSTR("%02u/%02u/%04u %02u:%02u:%02u A %02u:%02u B %02u:%02u T %d V %ld"),
             dt.Day(),
             dt.Month(),
             dt.Year(),
@@ -217,7 +218,8 @@ void printDateTime()
             aOne.Minute(),
             aTwo.Hour(),
             aTwo.Minute(),
-            t);
+            t,
+            batVcc);
     
   uint8_t i=0;
   while (datestring[i] != '\0')

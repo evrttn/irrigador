@@ -127,6 +127,7 @@ void loop() {
    }else{  
     goToSleep();   
     pumpWater();
+    verifyBattVoltage();
    }
 }
 
@@ -342,4 +343,53 @@ ISR(TIMER1_COMPA_vect)          // interrupcao por igualdade de comparacao no TI
     PORTB &= ~(1 << PB4); //desliga bluetooth
     PORTC &= ~(1 << PC1);
   }
+}
+
+long lerVcc() {
+  // Configura a referência para Vcc e lê o canal interno de 1.1V
+  #if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__)
+    ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+  #endif  
+  
+  delay(2); // Aguarda estabilização das tensões
+  ADCSRA |= _BV(ADSC); // Inicia a conversão ADC
+  while (bit_is_set(ADCSRA, ADSC)); // Aguarda o fim da leitura
+
+  uint16_t baixo  = ADCL; // Lê o registrador baixo
+  uint16_t alto = ADCH; // Lê o registrador alto
+  long resultado = (alto << 8) | baixo;
+
+  // Calcula o Vcc em milivolts: 1125300 = 1.1V * 1023 * 1000
+  const long vccMv = 1138000L;//1125300L;
+  resultado = vccMv / resultado; 
+  return resultado; // Retorna o valor em mV (ex: 5000 para 5.0V)
+}
+
+void tocarUmBip(){
+  const unsigned long interval = 250;   
+  unsigned long inicio = millis();
+
+  PORTD |= (1 << PD7);  
+  while (millis() - inicio <= interval); //millis() usa timer0
+  PORTD &= ~(1 << PD7);
+
+  inicio = millis();
+  while (millis() - inicio <= interval);
+}
+
+void verifyBattVoltage(){
+    long batVcc = lerVcc();
+    if(batVcc < 3400){
+      if(batVcc > 3300){
+        tocarUmBip();
+      }else if(batVcc > 3200){
+        tocarUmBip();
+        tocarUmBip();
+      }
+      else{// vcc < 3.2v
+        tocarUmBip();
+        tocarUmBip();
+        tocarUmBip();
+      }
+    }
 }

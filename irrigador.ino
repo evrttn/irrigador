@@ -292,40 +292,16 @@ void tratarTempo(char * comm){
 void pumpWater()
 {
   if(irrigMode){
-    /* codigo para abrir a valvula ligada ao modulo mosfet
-    PORTD |= (1 << PD4);  
-    delay(irrigInterval);
+    /* codigo para abrir a valvula ligada ao modulo mosfet */
+    uint8_t t0 = EEPROM.read(0);
+    const unsigned long interval = t0 * 1000;
+    const unsigned long inicio = millis();   
+      
+    PORTD |= (1 << PD4);      
+    while (millis() - inicio <= interval); //millis() usa timer0
     PORTD &= ~(1 << PD4);
-    */
-
-    uint8_t t = EEPROM.read(0);
-
-    unsigned long irrigTime = t * 1000;
-    PORTD |= (1 << PD4);  
-    unsigned long fim = millis() + irrigTime;
-    while (millis() < fim); //millis() usa timer0
-    PORTD &= ~(1 << PD4);
-
-    //fim = millis() + irrigTime;
-    //PORTD |= (1 << PD7);  
-    //while (millis() < fim);
-    //PORTD &= ~(1 << PD7);
-  
-    /*
-    PORTD |= (1 << PD6);  
-    delay(irrigInterval);
-    PORTD &= ~(1 << PD6);
-
-    PORTD |= (1 << PD7);  
-    delay(irrigInterval);
-    PORTD &= ~(1 << PD7);
-
-    PORTB |= (1 << PB0);  
-    delay(irrigInterval);
-    PORTB &= ~(1 << PB0);
-    */
-    irrigMode = false;
-  } 
+  }
+   
 }
 
 void UART0_config()

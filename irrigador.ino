@@ -127,7 +127,6 @@ void loop() {
    }else{  
     goToSleep();   
     pumpWater();
-    verifyBattVoltage();
    }
 }
 
@@ -303,8 +302,9 @@ void pumpWater()
     PORTD |= (1 << PD4);      
     while (millis() - inicio <= interval); //millis() usa timer0
     PORTD &= ~(1 << PD4);
-  }
-   
+    
+    verifyBattVoltage();
+  }   
 }
 
 void UART0_config()

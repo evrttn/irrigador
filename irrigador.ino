@@ -348,6 +348,9 @@ ISR(TIMER1_COMPA_vect)          // interrupcao por igualdade de comparacao no TI
 }
 
 long lerVcc() {
+
+  ADCSRA |= (1 << ADEN); //liga adc
+
   // Configura a referência para Vcc e lê o canal interno de 1.1V
   #if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__)
     ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
@@ -364,6 +367,8 @@ long lerVcc() {
   // Calcula o Vcc em milivolts: 1125300 = 1.1V * 1023 * 1000
   const long vccMv = 1138000L;//1125300L;
   resultado = vccMv / resultado; 
+
+  ADCSRA &= ~(1 << ADEN); //desliga adc
   return resultado; // Retorna o valor em mV (ex: 5000 para 5.0V)
 }
 

@@ -84,6 +84,11 @@ void setup() {
  
   OCR1A = 0x7A12;            // carrega registrador de comparacao: 8MHz/256/1Hz = 31250 = 0x7A12
   TCCR1B |= (1 << WGM12) | (1 << CS12);   // modo CTC, prescaler de 256: CS12 = 1  
+
+  //desliga watchdog
+  MCUSR &= ~(1 << WDRF);
+  WDTCSR = (1 << WDCE) | (1 << WDE);
+  WDTCSR = 0;
 }
 
 void setWakeUpAlarms()

@@ -52,6 +52,8 @@ void wakeUpBLE()
     PORTB &= ~(1 << PB4);
     PORTC &= ~(1 << PC1);
     TIMSK1 &= ~(1 << OCIE1A);  // desabilita interrupcao por igualdade de comparacao
+    PORTD &= ~(1 << PD1);//desliga TX E RX p/ evitar corrente parasita
+    PORTD &= ~(1 << PD0);
   }
 }
 
@@ -60,12 +62,12 @@ void setup() {
   UART0_config();
   //sei(); desnecessario
   DDRB |= (1 << DDB0); 
-  DDRD &= ~((1 << DDD3) | (1 << DDD2));
-  DDRD |= ((1 << DDD4) | (1 << DDD5) | (1 << DDD6) | (1 << DDD7));
+  DDRD &= ~((1 << DDD3) | (1 << DDD2) | (1 << DDD0));
+  DDRD |= ((1 << DDD4) | (1 << DDD5) | (1 << DDD6) | (1 << DDD7) | (1 << DDD1));
   DDRC |= (1 << DDC1);
   
   PORTD |= ((1 << PD3) | (1 << PD2));
-  PORTD &= ~((1 << PD4) | (1 << PD5) | (1 << PD6) | (1 << PD7));      
+  PORTD &= ~((1 << PD4) | (1 << PD5) | (1 << PD6) | (1 << PD7) | (1 << PD1) | (1 << PD0));      
   PORTB &= ~((1 << PB4) | (1 << PB0));
   PORTC &= ~(1 << PC1);
   
@@ -350,6 +352,8 @@ ISR(TIMER1_COMPA_vect)          // interrupcao por igualdade de comparacao no TI
     TIMSK1 &= ~(1 << OCIE1A);  // desabilita interrupcao por igualdade de comparacao
     PORTB &= ~(1 << PB4); //desliga bluetooth
     PORTC &= ~(1 << PC1);
+    PORTD &= ~(1 << PD1);//desliga TX E RX p/ evitar corrente parasita
+    PORTD &= ~(1 << PD0);
   }
 }
 

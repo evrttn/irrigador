@@ -303,13 +303,18 @@ void pumpWater()
   if(irrigMode){
     /* codigo para abrir a valvula ligada ao modulo mosfet */
     uint8_t t0 = EEPROM.read(0);
-    const unsigned long interval = t0 * 1000;
-    const unsigned long inicio = millis();   
+    unsigned long interval = t0 * 1000;
+    unsigned long inicio = millis();   
       
     PORTD |= (1 << PD4);      
     while (millis() - inicio <= interval); //millis() usa timer0
     PORTD &= ~(1 << PD4);
-    
+
+     //wait two seconds to verify voltage because of voltage drop
+    interval = 2 * 1000;
+    inicio = millis();  
+    while (millis() - inicio <= interval);
+
     verifyBattVoltage();
   }   
 }

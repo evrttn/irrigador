@@ -86,9 +86,6 @@ void setup() {
   TCCR1B = 0;                //limpa registrador
   TCNT1  = 0;                //zera temporizador
 
-  // Limpa eventual flag de comparação pendente
-  TIFR1 = (1 << OCF1A);
- 
   // Interrupção a cada 4 segundos // ((15624 + 1) * 256) / 1.000.000 = 4s
   OCR1A = 15624; // (1.000.000 x 4) / 256 - 1 = 15624
   TCCR1B |= (1 << WGM12) | (1 << CS12);   // modo CTC, prescaler de 256: CS12 = 1  

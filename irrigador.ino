@@ -4,6 +4,9 @@
 #include <EEPROM.h>
 //#include "prescaler.h"
 
+#define F_CPU 1000000UL
+#define BAUD 9600UL
+
 #define BLUETOOTH_PIN 2
 #define INTERRUPT_PIN 3
 #define MAX_BUFF_SIZE 38
@@ -321,8 +324,12 @@ void pumpWater()
 
 void UART0_config()
 {
-  //Baud Rate de 9600bps para um cristal de 16MHz (Datasheet)
-  UBRR0 = 103;
+  // Ativa modo Double Speed
+  UCSR0A = (1 << U2X0);
+
+    // Configura baud rate p/ 9600bps
+  UBRR0H = 0;
+  UBRR0L = 12;
   
   //Habilita a interrupcao de recepcao e os pinos TX e RX
   UCSR0B =  (1<<RXEN0) | (1<<TXEN0) | (1<<RXCIE0) ;

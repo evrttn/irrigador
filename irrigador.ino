@@ -124,8 +124,7 @@ void goToSleep()
   Rtc.LatchAlarmsTriggeredFlags();// trigger alarms
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);  
   sleep_enable();    
-  attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), wakeUp, FALLING); //
-  sleep_bod_disable();
+  attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), wakeUp, FALLING);
   sleep_cpu();
   sleep_disable();
   detachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN));

@@ -4,8 +4,8 @@
 #include <EEPROM.h>
 //#include "prescaler.h"
 
-#define F_CPU 1000000UL
-#define BAUD 9600UL
+//#define F_CPU 1000000UL
+//#define BAUD 9600UL
 
 #define BLUETOOTH_PIN 2
 #define INTERRUPT_PIN 3
@@ -388,7 +388,7 @@ long lerVcc() {
   long resultado = (alto << 8) | baixo;
 
   // Calcula o Vcc em milivolts: 1125300 = 1.1V * 1023 * 1000
-  const long vccMv = 1138000L;//1125300L;
+  const long vccMv = 1125300L;//1125300L;
   resultado = vccMv / resultado; 
 
   ADCSRA &= ~(1 << ADEN); //desliga adc
@@ -409,10 +409,10 @@ void tocarUmBip(){
 
 void verifyBattVoltage(){
     long batVcc = lerVcc();
-    if(batVcc < 3400){
-      if(batVcc > 3300){
+    if(batVcc < 3100){
+      if(batVcc > 3000){
         tocarUmBip();
-      }else if(batVcc > 3200){
+      }else if(batVcc > 2900){
         tocarUmBip();
         tocarUmBip();
       }

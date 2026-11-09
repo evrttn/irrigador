@@ -85,8 +85,12 @@ void setup() {
   TCCR1A = 0;                //confira timer para operacao normal
   TCCR1B = 0;                //limpa registrador
   TCNT1  = 0;                //zera temporizador
+
+  // Limpa eventual flag de comparação pendente
+  TIFR1 = (1 << OCF1A);
  
-  OCR1A = 0x7A12;            // carrega registrador de comparacao: 8MHz/256/1Hz = 31250 = 0x7A12
+  // Interrupção a cada 4 segundos // ((15624 + 1) * 256) / 1.000.000 = 4s
+  OCR1A = 15624; // (1.000.000 x 4) / 256 - 1 = 15624
   TCCR1B |= (1 << WGM12) | (1 << CS12);   // modo CTC, prescaler de 256: CS12 = 1  
 
   //desliga watchdog
@@ -357,7 +361,7 @@ void UART0_enviaString(char *s)
 ISR(TIMER1_COMPA_vect)          // interrupcao por igualdade de comparacao no TIMER1
 {
   counter++;
-  if(counter > 59){
+  if(counter >=15){
     bleMode = false;
     TIMSK1 &= ~(1 << OCIE1A);  // desabilita interrupcao por igualdade de comparacao
     PORTB &= ~(1 << PB4); //desliga bluetooth
